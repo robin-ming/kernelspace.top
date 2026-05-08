@@ -1,0 +1,363 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const contentDir = path.join(root, "content");
+const postsDir = path.join(contentDir, "posts");
+const publicDir = path.join(root, "public");
+const distDir = path.join(root, "dist");
+const config = JSON.parse(fs.readFileSync(path.join(root, "site.config.json"), "utf8"));
+
+const isWatch = process.argv.includes("--watch");
+
+function clean() {
+  fs.rmSync(distDir, { recursive: true, force: true });
+  fs.mkdirSync(distDir, { recursive: true });
+}
+
+function copyDir(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const from = path.join(src, entry.name);
+    const to = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDir(from, to);
+    else fs.copyFileSync(from, to);
+  }
+}
+
+function parseFrontMatter(source) {
+  const match = source.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!match) return { data: {}, body: source };
+  const data = {};
+  for (const line of match[1].split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    let value = line.slice(idx + 1).trim();
+    if (value.startsWith("[") && value.endsWith("]")) {
+      value = value
+        .slice(1, -1)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    data[key] = value;
+  }
+  return { data, body: match[2].trim() };
+}
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[`~!@#$%^&*()+=[\]{};:'",.<>/?\\|]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function inlineMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  return html;
+}
+
+function markdownToHtml(markdown) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const blocks = [];
+  let paragraph = [];
+  let list = [];
+  let fence = null;
+  let code = [];
+
+  function flushParagraph() {
+    if (!paragraph.length) return;
+    blocks.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+    paragraph = [];
+  }
+
+  function flushList() {
+    if (!list.length) return;
+    blocks.push(`<ul>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</ul>`);
+    list = [];
+  }
+
+  for (const line of lines) {
+    if (line.startsWith("```")) {
+      if (fence) {
+        blocks.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+        fence = null;
+        code = [];
+      } else {
+        flushParagraph();
+        flushList();
+        fence = line;
+      }
+      continue;
+    }
+    if (fence) {
+      code.push(line);
+      continue;
+    }
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+    const heading = line.match(/^(#{1,4})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      const level = heading[1].length + 1;
+      const text = inlineMarkdown(heading[2]);
+      blocks.push(`<h${level} id="${slugify(heading[2])}">${text}</h${level}>`);
+      continue;
+    }
+    const bullet = line.match(/^-\s+(.+)$/);
+    if (bullet) {
+      flushParagraph();
+      list.push(bullet[1]);
+      continue;
+    }
+    const ordered = line.match(/^\d+\.\s+(.+)$/);
+    if (ordered) {
+      flushParagraph();
+      list.push(ordered[1]);
+      continue;
+    }
+    paragraph.push(line.trim());
+  }
+
+  flushParagraph();
+  flushList();
+  return blocks.join("\n");
+}
+
+function readPage(file) {
+  const source = fs.readFileSync(path.join(contentDir, file), "utf8");
+  const { data, body } = parseFrontMatter(source);
+  return { ...data, body, html: markdownToHtml(body) };
+}
+
+function readPosts() {
+  if (!fs.existsSync(postsDir)) return [];
+  return fs
+    .readdirSync(postsDir)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => {
+      const source = fs.readFileSync(path.join(postsDir, name), "utf8");
+      const { data, body } = parseFrontMatter(source);
+      const slug = name.replace(/\.md$/, "");
+      return {
+        slug,
+        url: `/posts/${slug}/`,
+        title: data.title || slug,
+        date: data.date || "",
+        summary: data.summary || "",
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        body,
+        html: markdownToHtml(body)
+      };
+    })
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+function layout({ title, description, body, active = "" }) {
+  const pageTitle = title === config.title ? config.title : `${title} - ${config.title}`;
+  const nav = config.nav
+    .map((item) => `<a class="${active === item.href ? "active" : ""}" href="${item.href}">${item.label}</a>`)
+    .join("");
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(pageTitle)}</title>
+  <meta name="description" content="${escapeHtml(description || config.description)}">
+  <link rel="canonical" href="https://${config.domain}${active || "/"}">
+  <link rel="alternate" type="application/rss+xml" title="${escapeHtml(config.title)}" href="/feed.xml">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="prompt">root@kernelspace</span>
+      <span>${escapeHtml(config.title)}</span>
+    </a>
+    <nav aria-label="主导航">${nav}</nav>
+  </header>
+  <main>${body}</main>
+  <footer class="site-footer">
+    <span>© ${new Date().getFullYear()} ${escapeHtml(config.author)}</span>
+    <a href="/feed.xml">RSS</a>
+    <a href="https://${config.domain}">${config.domain}</a>
+  </footer>
+</body>
+</html>`;
+}
+
+function writePage(route, html) {
+  const targetDir = path.join(distDir, route);
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, "index.html"), html);
+}
+
+function tagList(tags) {
+  return tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+}
+
+function renderHome(posts) {
+  const home = readPage("home.md");
+  const recent = posts
+    .slice(0, 5)
+    .map(
+      (post) => `<article class="post-card">
+        <div class="post-meta">${escapeHtml(post.date)} ${tagList(post.tags)}</div>
+        <h3><a href="${post.url}">${escapeHtml(post.title)}</a></h3>
+        <p>${escapeHtml(post.summary)}</p>
+      </article>`
+    )
+    .join("");
+  return layout({
+    title: config.title,
+    active: "/",
+    body: `<section class="hero">
+      <div>
+        <p class="eyebrow">Linux kernel engineering notes</p>
+        <h1>${escapeHtml(home.title)}</h1>
+        <p class="subtitle">${escapeHtml(home.subtitle)}</p>
+        <div class="intro">${home.html}</div>
+      </div>
+      <aside class="terminal-panel" aria-label="站点主题">
+        <div class="terminal-bar"><span></span><span></span><span></span></div>
+        <pre><code>$ addr2line -e vmlinux
+$ crash vmcore vmlinux
+$ git format-patch -1
+$ make ARCH=loongarch olddefconfig</code></pre>
+      </aside>
+    </section>
+    <section class="section-head">
+      <h2>最近文章</h2>
+      <a href="/posts/">查看全部</a>
+    </section>
+    <section class="post-grid">${recent}</section>`
+  });
+}
+
+function renderPostsIndex(posts) {
+  const items = posts
+    .map(
+      (post) => `<article class="post-row">
+        <time>${escapeHtml(post.date)}</time>
+        <div>
+          <h2><a href="${post.url}">${escapeHtml(post.title)}</a></h2>
+          <p>${escapeHtml(post.summary)}</p>
+          <div class="tags">${tagList(post.tags)}</div>
+        </div>
+      </article>`
+    )
+    .join("");
+  return layout({
+    title: "文章",
+    active: "/posts/",
+    body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p></section><section class="post-list">${items}</section>`
+  });
+}
+
+function renderPost(post) {
+  return layout({
+    title: post.title,
+    description: post.summary,
+    active: post.url,
+    body: `<article class="article">
+      <header>
+        <div class="post-meta">${escapeHtml(post.date)} ${tagList(post.tags)}</div>
+        <h1>${escapeHtml(post.title)}</h1>
+        <p>${escapeHtml(post.summary)}</p>
+      </header>
+      <div class="article-body">${post.html}</div>
+    </article>`
+  });
+}
+
+function renderSimplePage(file, route, active) {
+  const page = readPage(file);
+  return layout({
+    title: page.title,
+    description: page.description,
+    active,
+    body: `<article class="article"><header><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description || "")}</p></header><div class="article-body">${page.html}</div></article>`
+  });
+}
+
+function renderFeed(posts) {
+  const items = posts
+    .map(
+      (post) => `<item>
+  <title>${escapeHtml(post.title)}</title>
+  <link>https://${config.domain}${post.url}</link>
+  <guid>https://${config.domain}${post.url}</guid>
+  <pubDate>${new Date(post.date).toUTCString()}</pubDate>
+  <description>${escapeHtml(post.summary)}</description>
+</item>`
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>${escapeHtml(config.title)}</title>
+  <link>https://${config.domain}</link>
+  <description>${escapeHtml(config.description)}</description>
+${items}
+</channel>
+</rss>`;
+}
+
+function renderSitemap(posts) {
+  const routes = ["/", "/posts/", "/topics/", "/about/", ...posts.map((post) => post.url)];
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${routes.map((route) => `  <url><loc>https://${config.domain}${route}</loc></url>`).join("\n")}
+</urlset>`;
+}
+
+function build() {
+  clean();
+  copyDir(publicDir, distDir);
+  fs.mkdirSync(path.join(distDir, "assets"), { recursive: true });
+  fs.copyFileSync(path.join(root, "src/styles/site.css"), path.join(distDir, "assets/site.css"));
+  const posts = readPosts();
+  writePage("", renderHome(posts));
+  writePage("posts", renderPostsIndex(posts));
+  writePage("topics", renderSimplePage("topics.md", "topics", "/topics/"));
+  writePage("about", renderSimplePage("about.md", "about", "/about/"));
+  for (const post of posts) writePage(path.join("posts", post.slug), renderPost(post));
+  fs.writeFileSync(path.join(distDir, "feed.xml"), renderFeed(posts));
+  fs.writeFileSync(path.join(distDir, "sitemap.xml"), renderSitemap(posts));
+  console.log(`Built ${posts.length} post(s) into dist/`);
+}
+
+build();
+
+if (isWatch) {
+  fs.watch(root, { recursive: true }, (_, filename) => {
+    if (!filename || filename.startsWith("dist") || filename.startsWith("node_modules")) return;
+    try {
+      build();
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  console.log("Watching for changes...");
+}
