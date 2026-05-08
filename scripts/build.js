@@ -138,6 +138,7 @@ function markdownToHtml(markdown, options = {}) {
   const headingIds = new Map();
   let paragraph = [];
   let list = [];
+  let listType = null;
   let fence = null;
   let code = [];
 
@@ -149,8 +150,10 @@ function markdownToHtml(markdown, options = {}) {
 
   function flushList() {
     if (!list.length) return;
-    blocks.push(`<ul>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</ul>`);
+    const tag = listType === "ol" ? "ol" : "ul";
+    blocks.push(`<${tag}>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</${tag}>`);
     list = [];
+    listType = null;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -225,12 +228,16 @@ function markdownToHtml(markdown, options = {}) {
     const bullet = line.match(/^-\s+(.+)$/);
     if (bullet) {
       flushParagraph();
+      if (listType && listType !== "ul") flushList();
+      listType = "ul";
       list.push(bullet[1]);
       continue;
     }
     const ordered = line.match(/^\d+\.\s+(.+)$/);
     if (ordered) {
       flushParagraph();
+      if (listType && listType !== "ol") flushList();
+      listType = "ol";
       list.push(ordered[1]);
       continue;
     }
