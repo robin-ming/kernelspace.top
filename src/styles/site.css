@@ -978,6 +978,15 @@ pre {
   padding-top: 34px;
 }
 
+.home .section-head {
+  border-top-color: rgb(255 255 255 / 0.28);
+  color: var(--ink);
+}
+
+.home .section-head a {
+  color: var(--accent);
+}
+
 .section-head a:hover,
 .post-grid a:hover,
 .post-list a:hover,
