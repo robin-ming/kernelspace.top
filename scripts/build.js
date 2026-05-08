@@ -415,9 +415,9 @@ function renderPost(post) {
           <p>${escapeHtml(post.summary)}</p>
         </header>
         <div class="article-body">${post.html}</div>
-        ${comments}
       </article>
       ${toc}
+      ${comments}
     </div>`
   });
 }

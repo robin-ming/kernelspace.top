@@ -336,6 +336,9 @@ li code {
 .article-shell {
   display: grid;
   grid-template-columns: minmax(0, 820px) 220px;
+  grid-template-areas:
+    "article toc"
+    "comments toc";
   align-items: start;
   gap: 54px;
   max-width: 1110px;
@@ -343,11 +346,13 @@ li code {
 }
 
 .article-shell .article {
+  grid-area: article;
   width: 100%;
   margin: 0;
 }
 
 .article-toc {
+  grid-area: toc;
   position: sticky;
   top: 104px;
   max-height: calc(100vh - 128px);
@@ -402,6 +407,7 @@ li code {
 }
 
 .comments-section {
+  grid-area: comments;
   margin-top: 54px;
   padding-top: 28px;
   border-top: 1px solid var(--line);
@@ -817,18 +823,17 @@ li code {
   }
 
   .article-shell {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "toc"
+      "article"
+      "comments";
     gap: 0;
-  }
-
-  .article-shell .article {
-    order: 2;
   }
 
   .article-toc {
     position: static;
-    order: 1;
     width: 100%;
     max-height: none;
     margin: 28px 0 0;
