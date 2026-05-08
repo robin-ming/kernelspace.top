@@ -819,7 +819,60 @@ li code {
   }
 
   .archive-list a {
-    gap: 4px;
+    gap: 6px;
+    align-items: start;
+    padding: 16px;
+    border: 1px solid var(--line-dark);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.42);
+  }
+
+  .archive-list time,
+  .archive-list small {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .archive-list span {
+    display: block;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .taxonomy-card {
+    min-height: auto;
+    gap: 8px;
+    padding: 18px;
+  }
+
+  .taxonomy-card span,
+  .taxonomy-card small {
+    display: block;
+    line-height: 1.45;
+  }
+
+  .taxonomy-card strong {
+    display: block;
+    font-size: 1.25rem;
+  }
+
+  .post-row {
+    gap: 10px;
+    padding: 18px;
+  }
+
+  .post-row time,
+  .post-row .post-meta,
+  .post-row p,
+  .tags {
+    display: block;
+    line-height: 1.45;
+  }
+
+  .post-row h2 {
+    font-size: 1.24rem;
+    line-height: 1.28;
   }
 
   .article-shell {
