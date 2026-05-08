@@ -268,9 +268,13 @@ li code {
   border-bottom: 1px solid var(--line);
 }
 
-.page-title h1,
-.article h1 {
+.page-title h1 {
   font-size: clamp(2.2rem, 6vw, 4.6rem);
+}
+
+.article h1 {
+  font-size: clamp(2rem, 3.8vw, 3.4rem);
+  line-height: 1.16;
 }
 
 .post-list {
