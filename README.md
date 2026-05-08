@@ -170,6 +170,47 @@ Notes
 
 不需要手写目录。
 
+## Markdown 扩展能力
+
+当前自定义 Markdown 解析器支持：
+
+- 标题、段落、无序列表、有序列表
+- 代码块和行内代码
+- 粗体、斜体、链接
+- 图片
+- 引用块
+- 分隔线
+- 表格
+- Mermaid 图表代码块
+- MathJax 数学公式
+
+Mermaid 写法：
+
+````markdown
+```mermaid
+flowchart TD
+    A[panic log] --> B[crash analysis]
+```
+````
+
+数学公式写法：
+
+```markdown
+行内公式：\( T = f^{-1} \)
+
+块级公式：
+
+$$
+latency = t_{irq} + t_{sched} + t_{work}
+$$
+```
+
+语法验证文章：
+
+```text
+/posts/markdown-writing-guide/
+```
+
 ## 评论系统
 
 评论使用 Giscus，数据存储在 GitHub Discussions。
@@ -308,4 +349,4 @@ git push origin main
 - 分类建议保持少而稳定，标签可以更细。
 - Giscus 依赖 GitHub Discussions 和 Giscus App 授权。
 - 如果修改 front matter 格式，注意同步 `scripts/build.js` 的解析逻辑。
-- 当前 Markdown 解析器是轻量实现，只覆盖本站需要的标题、段落、列表、代码块、行内代码、加粗和链接。
+- 当前 Markdown 解析器仍是轻量实现，但已覆盖本站技术写作常用的表格、引用、图片、Mermaid 和 MathJax。若以后需要脚注、任务列表或完整 GFM，可继续扩展或切换成熟 Markdown 渲染库。

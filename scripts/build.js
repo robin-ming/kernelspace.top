@@ -72,6 +72,7 @@ function categorySlug(value) {
 
 function stripInlineMarkdown(text) {
   return String(text)
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
@@ -87,10 +88,47 @@ function uniqueSlug(value, seen) {
 
 function inlineMarkdown(text) {
   let html = escapeHtml(text);
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
   return html;
+}
+
+function renderCodeBlock(language, code) {
+  const source = escapeHtml(code.join("\n"));
+  if (language === "mermaid") {
+    return `<pre class="mermaid">${source}</pre>`;
+  }
+  const className = language ? ` class="language-${escapeHtml(language)}"` : "";
+  return `<pre><code${className}>${source}</code></pre>`;
+}
+
+function splitTableRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+}
+
+function isTableStart(lines, index) {
+  return Boolean(lines[index]?.includes("|") && isTableSeparator(lines[index + 1] || ""));
+}
+
+function renderTable(rows) {
+  const [head, ...body] = rows;
+  const thead = `<thead><tr>${head.map((cell) => `<th>${inlineMarkdown(cell)}</th>`).join("")}</tr></thead>`;
+  const tbody = body.length
+    ? `<tbody>${body.map((row) => `<tr>${row.map((cell) => `<td>${inlineMarkdown(cell)}</td>`).join("")}</tr>`).join("")}</tbody>`
+    : "";
+  return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
 }
 
 function markdownToHtml(markdown, options = {}) {
@@ -115,16 +153,17 @@ function markdownToHtml(markdown, options = {}) {
     list = [];
   }
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (line.startsWith("```")) {
       if (fence) {
-        blocks.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+        blocks.push(renderCodeBlock(fence, code));
         fence = null;
         code = [];
       } else {
         flushParagraph();
         flushList();
-        fence = line;
+        fence = line.slice(3).trim().split(/\s+/)[0] || "text";
       }
       continue;
     }
@@ -135,6 +174,37 @@ function markdownToHtml(markdown, options = {}) {
     if (!line.trim()) {
       flushParagraph();
       flushList();
+      continue;
+    }
+    if (/^\s*---+\s*$/.test(line)) {
+      flushParagraph();
+      flushList();
+      blocks.push("<hr>");
+      continue;
+    }
+    if (isTableStart(lines, i)) {
+      flushParagraph();
+      flushList();
+      const rows = [splitTableRow(lines[i])];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim()) {
+        rows.push(splitTableRow(lines[i]));
+        i++;
+      }
+      i--;
+      blocks.push(renderTable(rows));
+      continue;
+    }
+    if (line.startsWith(">")) {
+      flushParagraph();
+      flushList();
+      const quote = [];
+      while (i < lines.length && lines[i].startsWith(">")) {
+        quote.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      i--;
+      blocks.push(`<blockquote>${markdownToHtml(quote.join("\n"))}</blockquote>`);
       continue;
     }
     const heading = line.match(/^(#{1,4})\s+(.+)$/);
@@ -239,6 +309,20 @@ function layout({ title, description, body, active = "", canonical = active, bod
     <a href="/feed.xml">RSS</a>
     <a href="https://${config.domain}">${config.domain}</a>
   </footer>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\\\(", "\\\\)"]],
+        displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]]
+      },
+      svg: { fontCache: "global" }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "strict" });
+  </script>
 </body>
 </html>`;
 }
