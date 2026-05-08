@@ -1,3 +1,11 @@
+---
+title: crash 解析 openEuler 2403 SP2 vmcore 报错问题分析
+date: 2026-01-23
+summary: crash 解析 openEuler 2403 SP2 vmcore 报错问题分析
+category: Kdump / Crash
+tags: [kdump, crash, vmcore]
+---
+
 # crash 解析 openEuler 2403 SP2 vmcore 报错问题分析
 
 ## 1. 问题背景
