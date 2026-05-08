@@ -2,6 +2,7 @@
 title: 补丁复盘怎么写：从现象修复到根因闭环
 date: 2026-05-04
 summary: 一个好补丁不只改代码，还应该能解释现象、根因、影响范围、验证方法和为什么这个修法是合适的。
+category: Patch Notes
 tags: [patch, review, workflow]
 ---
 

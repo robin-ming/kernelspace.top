@@ -193,6 +193,13 @@ li code {
   margin: 0;
 }
 
+.page-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
 .post-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -243,6 +250,74 @@ li code {
   display: grid;
   gap: 14px;
   padding: 28px 0 56px;
+}
+
+.taxonomy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 30px 0 60px;
+}
+
+.taxonomy-card {
+  display: grid;
+  gap: 12px;
+  min-height: 190px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  text-decoration: none;
+}
+
+.taxonomy-card span,
+.taxonomy-card small {
+  color: var(--muted);
+}
+
+.taxonomy-card strong {
+  font-size: 1.4rem;
+  line-height: 1.15;
+}
+
+.archive {
+  display: grid;
+  gap: 34px;
+  padding: 30px 0 60px;
+}
+
+.archive-month {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.archive-month h2 {
+  margin: 0;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+}
+
+.archive-list {
+  display: grid;
+  gap: 12px;
+}
+
+.archive-list a {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 150px;
+  gap: 16px;
+  align-items: baseline;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.archive-list small {
+  color: var(--muted);
 }
 
 .post-row {
@@ -528,6 +603,12 @@ h1 {
   box-shadow: 0 18px 48px rgb(33 179 107 / 0.22);
 }
 
+.button.light {
+  border-color: var(--line-dark);
+  background: rgb(255 255 255 / 0.48);
+  color: var(--ink-dark);
+}
+
 .terminal-panel {
   border-color: rgb(143 197 166 / 0.24);
   background: rgb(9 15 13 / 0.84);
@@ -609,7 +690,8 @@ pre {
 }
 
 .post-card,
-.post-row {
+.post-row,
+.taxonomy-card {
   border-color: var(--line-dark);
   background:
     linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.36)),
@@ -640,6 +722,11 @@ time {
 
 .tag {
   color: #9a4a16;
+}
+
+.archive-month,
+.archive-list a {
+  border-color: var(--line-dark);
 }
 
 .page-title,
@@ -697,6 +784,16 @@ li code {
   .signal-strip {
     grid-template-columns: 1fr;
     margin-top: -18px;
+  }
+
+  .taxonomy-grid,
+  .archive-month,
+  .archive-list a {
+    grid-template-columns: 1fr;
+  }
+
+  .archive-list a {
+    gap: 4px;
   }
 
   .article-shell {

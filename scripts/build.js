@@ -66,6 +66,10 @@ function slugify(value) {
   return slug || "section";
 }
 
+function categorySlug(value) {
+  return slugify(value).replaceAll("/", "-");
+}
+
 function stripInlineMarkdown(text) {
   return String(text)
     .replace(/`([^`]+)`/g, "$1")
@@ -191,6 +195,8 @@ function readPosts() {
         title: data.title || slug,
         date: data.date || "",
         summary: data.summary || "",
+        category: data.category || "Notes",
+        categorySlug: categorySlug(data.category || "Notes"),
         tags: Array.isArray(data.tags) ? data.tags : [],
         body,
         html: rendered.html,
@@ -200,7 +206,7 @@ function readPosts() {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
-function layout({ title, description, body, active = "", bodyClass = "page" }) {
+function layout({ title, description, body, active = "", canonical = active, bodyClass = "page" }) {
   const pageTitle = title === config.title ? config.title : `${title} - ${config.title}`;
   const nav = config.nav
     .map((item) => `<a class="${active === item.href ? "active" : ""}" href="${item.href}">${item.label}</a>`)
@@ -212,7 +218,7 @@ function layout({ title, description, body, active = "", bodyClass = "page" }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(pageTitle)}</title>
   <meta name="description" content="${escapeHtml(description || config.description)}">
-  <link rel="canonical" href="https://${config.domain}${active || "/"}">
+  <link rel="canonical" href="https://${config.domain}${canonical || "/"}">
   <link rel="alternate" type="application/rss+xml" title="${escapeHtml(config.title)}" href="/feed.xml">
   <link rel="stylesheet" href="/assets/site.css">
 </head>
@@ -244,6 +250,45 @@ function tagList(tags) {
   return tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
 }
 
+function groupByCategory(posts) {
+  const groups = new Map();
+  for (const post of posts) {
+    if (!groups.has(post.category)) {
+      groups.set(post.category, {
+        name: post.category,
+        slug: post.categorySlug,
+        posts: []
+      });
+    }
+    groups.get(post.category).posts.push(post);
+  }
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function groupByArchiveMonth(posts) {
+  const groups = new Map();
+  for (const post of posts) {
+    const key = post.date.slice(0, 7) || "undated";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(post);
+  }
+  return [...groups.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+}
+
+function postRow(post) {
+  return `<article class="post-row">
+    <time>${escapeHtml(post.date)}</time>
+    <div>
+      <div class="post-meta">
+        <a href="/categories/${post.categorySlug}/">${escapeHtml(post.category)}</a>
+      </div>
+      <h2><a href="${post.url}">${escapeHtml(post.title)}</a></h2>
+      <p>${escapeHtml(post.summary)}</p>
+      <div class="tags">${tagList(post.tags)}</div>
+    </div>
+  </article>`;
+}
+
 function renderToc(headings = []) {
   if (!headings.length) return "";
   const items = headings
@@ -265,7 +310,7 @@ function renderHome(posts) {
     .slice(0, 5)
     .map(
       (post) => `<article class="post-card">
-        <div class="post-meta">${escapeHtml(post.date)} ${tagList(post.tags)}</div>
+        <div class="post-meta">${escapeHtml(post.date)} · <a href="/categories/${post.categorySlug}/">${escapeHtml(post.category)}</a></div>
         <h3><a href="${post.url}">${escapeHtml(post.title)}</a></h3>
         <p>${escapeHtml(post.summary)}</p>
       </article>`
@@ -312,22 +357,11 @@ crash&gt; dis -l schedule</code></pre>
 }
 
 function renderPostsIndex(posts) {
-  const items = posts
-    .map(
-      (post) => `<article class="post-row">
-        <time>${escapeHtml(post.date)}</time>
-        <div>
-          <h2><a href="${post.url}">${escapeHtml(post.title)}</a></h2>
-          <p>${escapeHtml(post.summary)}</p>
-          <div class="tags">${tagList(post.tags)}</div>
-        </div>
-      </article>`
-    )
-    .join("");
+  const items = posts.map(postRow).join("");
   return layout({
     title: "文章",
     active: "/posts/",
-    body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p></section><section class="post-list">${items}</section>`
+    body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/archive/">归档</a></div></section><section class="post-list">${items}</section>`
   });
 }
 
@@ -361,6 +395,57 @@ function renderSimplePage(file, route, active) {
   });
 }
 
+function renderCategoriesIndex(categories) {
+  const items = categories
+    .map(
+      (category) => `<a class="taxonomy-card" href="/categories/${category.slug}/">
+        <span>${category.posts.length} 篇</span>
+        <strong>${escapeHtml(category.name)}</strong>
+        <small>${escapeHtml(category.posts[0]?.summary || "")}</small>
+      </a>`
+    )
+    .join("");
+  return layout({
+    title: "分类",
+    active: "/archive/",
+    canonical: "/categories/",
+    body: `<section class="page-title"><h1>分类</h1><p>按内核工程主题浏览文章。分类保持克制，只保留长期会写的方向。</p></section><section class="taxonomy-grid">${items}</section>`
+  });
+}
+
+function renderCategoryPage(category) {
+  return layout({
+    title: category.name,
+    active: "/archive/",
+    canonical: `/categories/${category.slug}/`,
+    body: `<section class="page-title"><h1>${escapeHtml(category.name)}</h1><p>${category.posts.length} 篇文章</p><p><a href="/categories/">查看全部分类</a></p></section><section class="post-list">${category.posts.map(postRow).join("")}</section>`
+  });
+}
+
+function renderArchive(posts) {
+  const months = groupByArchiveMonth(posts)
+    .map(
+      ([month, monthPosts]) => `<section class="archive-month">
+        <h2>${escapeHtml(month)}</h2>
+        <div class="archive-list">${monthPosts
+          .map(
+            (post) => `<a href="${post.url}">
+              <time>${escapeHtml(post.date)}</time>
+              <span>${escapeHtml(post.title)}</span>
+              <small>${escapeHtml(post.category)}</small>
+            </a>`
+          )
+          .join("")}</div>
+      </section>`
+    )
+    .join("");
+  return layout({
+    title: "归档",
+    active: "/archive/",
+    body: `<section class="page-title"><h1>归档</h1><p>按时间回看文章和调试记录。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/posts/">全部文章</a></div></section><section class="archive">${months}</section>`
+  });
+}
+
 function renderFeed(posts) {
   const items = posts
     .map(
@@ -384,8 +469,17 @@ ${items}
 </rss>`;
 }
 
-function renderSitemap(posts) {
-  const routes = ["/", "/posts/", "/topics/", "/about/", ...posts.map((post) => post.url)];
+function renderSitemap(posts, categories = []) {
+  const routes = [
+    "/",
+    "/posts/",
+    "/topics/",
+    "/archive/",
+    "/categories/",
+    "/about/",
+    ...categories.map((category) => `/categories/${category.slug}/`),
+    ...posts.map((post) => post.url)
+  ];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes.map((route) => `  <url><loc>https://${config.domain}${route}</loc></url>`).join("\n")}
@@ -398,9 +492,13 @@ function build() {
   fs.mkdirSync(path.join(distDir, "assets"), { recursive: true });
   fs.copyFileSync(path.join(root, "src/styles/site.css"), path.join(distDir, "assets/site.css"));
   const posts = readPosts();
+  const categories = groupByCategory(posts);
   writePage("", renderHome(posts));
   writePage("posts", renderPostsIndex(posts));
   writePage("topics", renderSimplePage("topics.md", "topics", "/topics/"));
+  writePage("archive", renderArchive(posts));
+  writePage("categories", renderCategoriesIndex(categories));
+  for (const category of categories) writePage(path.join("categories", category.slug), renderCategoryPage(category));
   writePage("about", renderSimplePage("about.md", "about", "/about/"));
   for (const post of posts) writePage(path.join("posts", post.slug), renderPost(post));
   writePage("404", layout({
@@ -408,7 +506,7 @@ function build() {
     body: `<section class="page-title"><h1>404</h1><p>这个页面不存在，可能文章路径已经调整。</p><p><a class="button primary" href="/">回到首页</a></p></section>`
   }));
   fs.writeFileSync(path.join(distDir, "feed.xml"), renderFeed(posts));
-  fs.writeFileSync(path.join(distDir, "sitemap.xml"), renderSitemap(posts));
+  fs.writeFileSync(path.join(distDir, "sitemap.xml"), renderSitemap(posts, categories));
   console.log(`Built ${posts.length} post(s) into dist/`);
 }
 

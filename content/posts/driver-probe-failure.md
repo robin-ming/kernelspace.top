@@ -2,6 +2,7 @@
 title: 驱动 probe 失败排查：从错误码看资源依赖
 date: 2026-05-06
 summary: probe 失败不是一个点，而是一条资源依赖链。错误码、defer、devm 生命周期和日志位置决定了排查效率。
+category: Driver Development
 tags: [driver, probe, kernel]
 ---
 

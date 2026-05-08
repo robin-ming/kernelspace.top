@@ -2,6 +2,7 @@
 title: 内核 panic 后的第一个小时：从现场保护到根因假设
 date: 2026-05-08
 summary: 一次内核崩溃真正有价值的不是 panic 文本本身，而是从现场保护、日志整理、调用栈还原到假设收敛的完整路径。
+category: Kernel Debugging
 tags: [kernel, panic, debugging]
 ---
 

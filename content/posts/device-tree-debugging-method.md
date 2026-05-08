@@ -2,6 +2,7 @@
 title: 设备树问题排查方法：不要只盯着 dts
 date: 2026-05-07
 summary: 设备树问题通常不是单纯写错一个属性，而是硬件连接、binding、驱动匹配、资源获取和 probe 时序共同作用的结果。
+category: Device Tree
 tags: [device-tree, driver, bringup]
 ---
 

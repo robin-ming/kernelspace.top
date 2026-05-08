@@ -2,6 +2,7 @@
 title: kdump 和 crash 分析流程：让 vmcore 变成证据
 date: 2026-05-05
 summary: vmcore 的价值不在于文件本身，而在于能否用 crash 把崩溃时的任务、内存、锁和对象状态还原成可验证证据。
+category: Kdump / Crash
 tags: [kdump, crash, vmcore]
 ---
 
