@@ -319,7 +319,7 @@ function layout({ title, description, body, active = "", canonical = active, bod
   <script>
     window.MathJax = {
       tex: {
-        inlineMath: [["\\\\(", "\\\\)"]],
+        inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]],
         displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]]
       },
       svg: { fontCache: "global" }
