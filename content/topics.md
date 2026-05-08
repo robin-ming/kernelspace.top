@@ -1,13 +1,6 @@
 ---
 title: 专题
-description: 文章会逐步按专题归档。
+description: 按内核工程主题浏览文章。
 ---
 
-专题页会随着文章增加逐步整理。当前规划：
-
-- Kernel Debugging
-- Device Tree
-- Driver Development
-- Kdump / Crash
-- Boot Flow
-- Patch Notes
+专题页用来按长期主题组织文章。下面的卡片会直接跳转到对应分类页，并展示该专题最新更新。

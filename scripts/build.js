@@ -369,6 +369,58 @@ function groupByArchiveMonth(posts) {
   return [...groups.entries()].sort((a, b) => b[0].localeCompare(a[0]));
 }
 
+const topicPlan = [
+  {
+    name: "Kernel Debugging",
+    summary: "panic、crash、ftrace、lockdep 和现场证据。",
+  },
+  {
+    name: "Device Tree",
+    summary: "dts、binding、clock、regulator 和设备描述。",
+  },
+  {
+    name: "Driver Development",
+    summary: "probe、irq、dma、clock 和资源依赖。",
+  },
+  {
+    name: "Kdump / Crash",
+    summary: "vmcore、crash、dump 流程和分析方法。",
+  },
+  {
+    name: "Boot Flow",
+    summary: "从 bootloader 到 init 的启动路径。",
+  },
+  {
+    name: "Patch Notes",
+    summary: "补丁复盘、根因闭环和提交说明。",
+  },
+];
+
+function renderTopicCard(plan, category) {
+  if (!category) {
+    return `<div class="taxonomy-card topic-card topic-card-muted">
+      <span>待整理</span>
+      <strong>${escapeHtml(plan.name)}</strong>
+      <small>${escapeHtml(plan.summary)}</small>
+      <div class="topic-latest">
+        <span>状态</span>
+        <em>文章还在补充中</em>
+      </div>
+    </div>`;
+  }
+
+  const latest = category.posts[0];
+  return `<a class="taxonomy-card topic-card" href="/categories/${category.slug}/">
+    <span>${category.posts.length} 篇文章</span>
+    <strong>${escapeHtml(plan.name)}</strong>
+    <small>${escapeHtml(plan.summary)}</small>
+    <div class="topic-latest">
+      <span>最新文章</span>
+      <em>${escapeHtml(latest?.title || "未命名")}</em>
+    </div>
+  </a>`;
+}
+
 function postRow(post) {
   return `<article class="post-row">
     <time>${escapeHtml(post.date)}</time>
@@ -491,6 +543,31 @@ function renderPostsIndex(posts) {
     title: "文章",
     active: "/posts/",
     body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/archive/">归档</a></div></section><section class="post-list">${items}</section>`
+  });
+}
+
+function renderTopicsPage(categories) {
+  const page = readPage("topics.md");
+  const categoryByName = new Map(categories.map((category) => [category.name, category]));
+  const cards = topicPlan
+    .map((topic) => renderTopicCard(topic, categoryByName.get(topic.name)))
+    .join("");
+
+  return layout({
+    title: page.title,
+    active: "/topics/",
+    body: `<section class="page-title">
+      <h1>${escapeHtml(page.title)}</h1>
+      <p>${escapeHtml(page.description || "")}</p>
+    </section>
+    <section class="article topic-intro">
+      <div class="article-body">${page.html}</div>
+    </section>
+    <section class="section-head">
+      <h2>专题索引</h2>
+      <a href="/categories/">查看全部分类</a>
+    </section>
+    <section class="taxonomy-grid topic-grid">${cards}</section>`
   });
 }
 
@@ -626,7 +703,7 @@ function build() {
   const categories = groupByCategory(posts);
   writePage("", renderHome(posts));
   writePage("posts", renderPostsIndex(posts));
-  writePage("topics", renderSimplePage("topics.md", "topics", "/topics/"));
+  writePage("topics", renderTopicsPage(categories));
   writePage("archive", renderArchive(posts));
   writePage("categories", renderCategoriesIndex(categories));
   for (const category of categories) writePage(path.join("categories", category.slug), renderCategoryPage(category));

@@ -307,6 +307,36 @@ li code {
   line-height: 1.15;
 }
 
+.topic-card {
+  align-content: start;
+}
+
+.topic-card .topic-latest {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.topic-card .topic-latest span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.topic-card .topic-latest em {
+  font-style: normal;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.topic-card-muted {
+  opacity: 0.88;
+}
+
 .archive {
   display: grid;
   gap: 34px;
