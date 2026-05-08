@@ -394,6 +394,13 @@ li code {
   padding: 22px;
 }
 
+.post-row > *,
+.archive-list a > *,
+.taxonomy-card > *,
+.article-shell .article {
+  min-width: 0;
+}
+
 .article {
   max-width: 820px;
   margin: 0 auto;
@@ -914,6 +921,21 @@ time {
   color: var(--ink-dark);
 }
 
+.post-row h2,
+.post-row p,
+.post-row time,
+.post-row .post-meta,
+.page-title p,
+.article header p,
+.article h1,
+.article-body,
+.article-body p,
+.article-body li,
+.article-body blockquote {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .article-body pre {
   border-radius: 8px;
   background: #0b100e;
@@ -980,6 +1002,7 @@ li code {
   }
 
   .post-row {
+    grid-template-columns: 1fr;
     gap: 10px;
     padding: 18px;
   }
