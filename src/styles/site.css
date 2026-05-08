@@ -724,8 +724,9 @@ nav a:hover {
   position: relative;
   min-height: calc(100vh - 78px);
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.72fr);
+  align-items: start;
   gap: 44px;
-  padding: 54px 0 42px;
+  padding: 14px 0 42px;
   overflow: hidden;
 }
 
@@ -1065,7 +1066,7 @@ li code {
   .hero {
     min-height: auto;
     grid-template-columns: 1fr;
-    padding: 48px 0 56px;
+    padding: 24px 0 56px;
   }
 
   .hero-image {
