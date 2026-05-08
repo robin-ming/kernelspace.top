@@ -6,9 +6,14 @@
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "node scripts/build.js --watch",
-    "serve": "node scripts/serve.js"
+    "serve": "node scripts/serve.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "wrangler": "^4.90.0"
   }
 }
