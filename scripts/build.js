@@ -31,6 +31,16 @@ function parseFrontMatter(source) {
   const match = source.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) return { data: {}, body: source };
   const data = {};
+  const cleanValue = (item) => {
+    const trimmed = item.trim();
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+      return trimmed.slice(1, -1);
+    }
+    return trimmed;
+  };
   for (const line of match[1].split("\n")) {
     const idx = line.indexOf(":");
     if (idx === -1) continue;
@@ -40,8 +50,10 @@ function parseFrontMatter(source) {
       value = value
         .slice(1, -1)
         .split(",")
-        .map((item) => item.trim())
+        .map(cleanValue)
         .filter(Boolean);
+    } else {
+      value = cleanValue(value);
     }
     data[key] = value;
   }
@@ -76,6 +88,17 @@ function stripInlineMarkdown(text) {
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .trim();
+}
+
+function plainTextFromMarkdown(text) {
+  return stripInlineMarkdown(text)
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^#{1,6}\s+/gm, " ")
+    .replace(/^[-*+]\s+/gm, " ")
+    .replace(/^\d+\.\s+/gm, " ")
+    .replace(/[>|*_~#]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -624,6 +647,117 @@ function renderArchive(posts) {
   });
 }
 
+function renderSearchPage() {
+  return layout({
+    title: "搜索",
+    active: "/search/",
+    canonical: "/search/",
+    description: "搜索内核空间的全部文章。",
+    body: `<section class="page-title search-title">
+      <h1>搜索</h1>
+      <p>输入关键词，匹配文章标题、摘要、分类、标签和正文。</p>
+    </section>
+    <section class="search-panel" aria-label="文章搜索">
+      <label class="search-box">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input id="site-search" type="search" autocomplete="off" placeholder="搜索 vmcore、crash、device tree..." aria-label="搜索文章">
+      </label>
+      <div class="search-hint" id="search-hint">支持多个关键词，空格分隔。</div>
+      <div class="search-results" id="search-results"></div>
+    </section>
+    <script>
+      const input = document.querySelector("#site-search");
+      const results = document.querySelector("#search-results");
+      const hint = document.querySelector("#search-hint");
+      let index = [];
+
+      const escapeHtml = (value = "") => String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+      const normalize = (value = "") => String(value).toLowerCase();
+
+      const tokenize = (value = "") => normalize(value)
+        .split(/\\s+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      function scorePost(post, terms) {
+        const title = normalize(post.title);
+        const summary = normalize(post.summary);
+        const meta = normalize([post.category, ...(post.tags || [])].join(" "));
+        const content = normalize(post.content);
+        let score = 0;
+        for (const term of terms) {
+          if (title.includes(term)) score += 16;
+          else if (summary.includes(term)) score += 8;
+          else if (meta.includes(term)) score += 6;
+          else if (content.includes(term)) score += 2;
+          else return 0;
+        }
+        return score;
+      }
+
+      function render(query) {
+        const terms = tokenize(query);
+        if (!terms.length) {
+          hint.textContent = "支持多个关键词，空格分隔。";
+          results.innerHTML = "";
+          return;
+        }
+
+        const matches = index
+          .map((post) => ({ post, score: scorePost(post, terms) }))
+          .filter((item) => item.score > 0)
+          .sort((a, b) => b.score - a.score || String(b.post.date).localeCompare(String(a.post.date)))
+          .slice(0, 24);
+
+        hint.textContent = matches.length ? \`找到 \${matches.length} 篇相关文章\` : "没有匹配的文章，换个关键词试试。";
+        results.innerHTML = matches.map(({ post }) => \`
+          <article class="search-result">
+            <div class="post-meta">\${escapeHtml(post.date)} · \${escapeHtml(post.category)}</div>
+            <h2><a href="\${post.url}">\${escapeHtml(post.title)}</a></h2>
+            <p>\${escapeHtml(post.summary || post.excerpt || "")}</p>
+            <div class="tags">\${(post.tags || []).map((tag) => \`<span>\${escapeHtml(tag)}</span>\`).join("")}</div>
+          </article>
+        \`).join("");
+      }
+
+      fetch("/search.json")
+        .then((response) => response.json())
+        .then((data) => {
+          index = data;
+          render(input.value);
+        })
+        .catch(() => {
+          hint.textContent = "搜索索引加载失败。";
+        });
+
+      input.addEventListener("input", () => render(input.value));
+      input.focus({ preventScroll: true });
+    </script>`
+  });
+}
+
+function renderSearchIndex(posts) {
+  return JSON.stringify(
+    posts.map((post) => ({
+      title: post.title,
+      summary: post.summary,
+      category: post.category,
+      tags: post.tags,
+      date: post.date,
+      url: post.url,
+      excerpt: plainTextFromMarkdown(post.body).slice(0, 180),
+      content: plainTextFromMarkdown(post.body)
+    })),
+    null,
+    2
+  );
+}
+
 function renderFeed(posts) {
   const items = posts
     .map(
@@ -651,6 +785,7 @@ function renderSitemap(posts, categories = []) {
   const routes = [
     "/",
     "/posts/",
+    "/search/",
     "/topics/",
     "/archive/",
     "/categories/",
@@ -673,6 +808,7 @@ function build() {
   const categories = groupByCategory(posts);
   writePage("", renderHome(posts));
   writePage("posts", renderPostsIndex(posts));
+  writePage("search", renderSearchPage());
   writePage("topics", renderTopicsPage(categories));
   writePage("archive", renderArchive(posts));
   writePage("categories", renderCategoriesIndex(categories));
@@ -685,6 +821,7 @@ function build() {
   }));
   fs.writeFileSync(path.join(distDir, "feed.xml"), renderFeed(posts));
   fs.writeFileSync(path.join(distDir, "sitemap.xml"), renderSitemap(posts, categories));
+  fs.writeFileSync(path.join(distDir, "search.json"), renderSearchIndex(posts));
   console.log(`Built ${posts.length} post(s) into dist/`);
 }
 
