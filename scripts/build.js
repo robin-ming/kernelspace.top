@@ -225,8 +225,11 @@ function layout({ title, description, body, active = "", canonical = active, bod
 <body class="${escapeHtml(bodyClass)}">
   <header class="site-header">
     <a class="brand" href="/">
-      <span class="prompt">root@kernelspace</span>
-      <span>${escapeHtml(config.title)}</span>
+      <span class="brand-mark">ks</span>
+      <span class="brand-copy">
+        <span class="brand-title">${escapeHtml(config.title)}</span>
+        <span class="brand-subtitle">kernelspace.top</span>
+      </span>
     </a>
     <nav aria-label="主导航">${nav}</nav>
   </header>
