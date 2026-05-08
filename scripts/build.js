@@ -530,8 +530,8 @@ function renderTopicsPage(categories) {
       <h1>${escapeHtml(page.title)}</h1>
       <p>${escapeHtml(page.description || "")}</p>
     </section>
-    <section class="article topic-intro">
-      <div class="article-body">${page.html}</div>
+    <section class="topic-note">
+      <p>${escapeHtml(page.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())}</p>
     </section>
     <section class="section-head">
       <h2>专题索引</h2>

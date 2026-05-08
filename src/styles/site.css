@@ -286,11 +286,15 @@ li code {
   padding: 30px 0 60px;
 }
 
+.topic-grid {
+  padding-top: 18px;
+}
+
 .taxonomy-card {
   display: grid;
   gap: 12px;
-  min-height: 190px;
-  padding: 22px;
+  min-height: 0;
+  padding: 18px 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -314,8 +318,8 @@ li code {
 .topic-card .topic-latest {
   display: grid;
   gap: 6px;
-  margin-top: auto;
-  padding-top: 16px;
+  margin-top: 4px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
@@ -328,13 +332,24 @@ li code {
 
 .topic-card .topic-latest em {
   font-style: normal;
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.45;
   color: var(--ink);
 }
 
 .topic-card-muted {
   opacity: 0.88;
+}
+
+.topic-note {
+  max-width: 760px;
+  padding: 22px 0 4px;
+  color: var(--muted-dark);
+}
+
+.topic-note p {
+  margin: 0;
+  line-height: 1.7;
 }
 
 .archive {
@@ -999,6 +1014,10 @@ li code {
   .taxonomy-card strong {
     display: block;
     font-size: 1.25rem;
+  }
+
+  .topic-note {
+    padding-top: 18px;
   }
 
   .post-row {
