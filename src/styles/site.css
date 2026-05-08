@@ -767,7 +767,7 @@ nav a:hover {
 h1 {
   max-width: 8ch;
   color: var(--ink);
-  font-size: clamp(2.8rem, 7vw, 5.4rem);
+  font-size: clamp(2.45rem, 5.6vw, 4.4rem);
 }
 
 .subtitle {
@@ -1073,7 +1073,7 @@ li code {
   }
 
   h1 {
-    font-size: clamp(2.6rem, 14vw, 4.2rem);
+    font-size: clamp(2.25rem, 11vw, 3.5rem);
   }
 
   .terminal-panel {
