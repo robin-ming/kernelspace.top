@@ -459,7 +459,7 @@ function renderComments() {
 function renderHome(posts) {
   const home = readPage("home.md");
   const recent = posts
-    .slice(0, 5)
+    .slice(0, 6)
     .map(
       (post) => `<article class="post-card">
         <div class="post-meta">${escapeHtml(post.date)} · <a href="/categories/${post.categorySlug}/">${escapeHtml(post.category)}</a></div>
