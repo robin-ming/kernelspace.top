@@ -475,7 +475,7 @@ function renderHome(posts) {
     body: `<section class="hero hero-immersive">
       <img class="hero-image" src="/assets/kernelspace-hero.png" alt="" aria-hidden="true">
       <div class="hero-copy">
-        <p class="eyebrow">Linux kernel engineering notes</p>
+        <p class="eyebrow">Systems, math, and reflection notes</p>
         <h1>${escapeHtml(home.title)}</h1>
         <p class="subtitle">${escapeHtml(home.subtitle)}</p>
         <div class="intro">${home.html}</div>
@@ -497,8 +497,8 @@ crash&gt; dis -l schedule</code></pre>
     </section>
     <section class="signal-strip" aria-label="站点关注方向">
       <div><strong>Kernel Debugging</strong><span>crash, ftrace, perf, lockdep</span></div>
-      <div><strong>Driver Bring-up</strong><span>probe, irq, dma, clocks</span></div>
-      <div><strong>Patch Notes</strong><span>root cause, tradeoffs, review</span></div>
+      <div><strong>Math Notes</strong><span>calculus, proof, structure, invariants</span></div>
+      <div><strong>Life Notes</strong><span>reflection, boundaries, long-term thinking</span></div>
     </section>
     <section class="section-head">
       <h2>最近文章</h2>
