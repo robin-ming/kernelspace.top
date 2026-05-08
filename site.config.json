@@ -7,12 +7,12 @@
   "github": "",
   "comments": {
     "provider": "giscus",
-    "enabled": false,
+    "enabled": true,
     "giscus": {
       "repo": "robin-ming/kernelspace.top",
       "repoId": "R_kgDOSXaXvw",
       "category": "Comments",
-      "categoryId": "",
+      "categoryId": "DIC_kwDOSXaXv84C8jyy",
       "mapping": "pathname",
       "strict": "0",
       "reactionsEnabled": "1",
