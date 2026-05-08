@@ -401,6 +401,25 @@ li code {
   padding-top: 24px;
 }
 
+.comments-section {
+  margin-top: 54px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.comments-section h2 {
+  margin: 0 0 18px;
+  font-size: 1.4rem;
+}
+
+.comments-placeholder {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
 .article-body h2,
 .article-body h3 {
   margin-top: 2.1em;
@@ -731,6 +750,7 @@ time {
 
 .page-title,
 .article header,
+.comments-section,
 .site-footer {
   border-color: var(--line-dark);
 }

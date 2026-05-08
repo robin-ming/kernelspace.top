@@ -34,3 +34,21 @@ tags: [kernel, debug]
 - Node.js version: `20` 或更新
 
 自定义域名使用 `kernelspace.top`，DNS 在 Cloudflare 时可以直接在 Pages 项目里绑定。
+
+## 评论
+
+站点已接入 Giscus 组件，但默认关闭。启用步骤：
+
+1. 在 GitHub 仓库 Settings 中开启 Discussions。
+2. 新建一个 Discussion category，建议命名为 `Comments`。
+3. 安装 Giscus App 到 `robin-ming/kernelspace.top`。
+4. 打开 https://giscus.app/ 生成配置，补全 `site.config.json` 中的 `comments.giscus.categoryId`。
+5. 将 `comments.enabled` 改为 `true`。
+
+当前已配置：
+
+```json
+"repo": "robin-ming/kernelspace.top",
+"repoId": "R_kgDOSXaXvw",
+"mapping": "pathname"
+```

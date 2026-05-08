@@ -304,6 +304,41 @@ function renderToc(headings = []) {
   </aside>`;
 }
 
+function renderComments() {
+  const comments = config.comments;
+  if (!comments || comments.provider !== "giscus" || !comments.enabled) return "";
+  const giscus = comments.giscus || {};
+  const required = ["repo", "repoId", "category", "categoryId"];
+  const missing = required.filter((key) => !giscus[key]);
+
+  if (missing.length) {
+    return `<section class="comments-section comments-placeholder">
+      <h2>评论</h2>
+      <p>Giscus 评论区配置还缺少：${missing.map(escapeHtml).join(", ")}。</p>
+    </section>`;
+  }
+
+  return `<section class="comments-section">
+    <h2>评论</h2>
+    <script src="https://giscus.app/client.js"
+      data-repo="${escapeHtml(giscus.repo)}"
+      data-repo-id="${escapeHtml(giscus.repoId)}"
+      data-category="${escapeHtml(giscus.category)}"
+      data-category-id="${escapeHtml(giscus.categoryId)}"
+      data-mapping="${escapeHtml(giscus.mapping || "pathname")}"
+      data-strict="${escapeHtml(giscus.strict || "0")}"
+      data-reactions-enabled="${escapeHtml(giscus.reactionsEnabled || "1")}"
+      data-emit-metadata="${escapeHtml(giscus.emitMetadata || "0")}"
+      data-input-position="${escapeHtml(giscus.inputPosition || "bottom")}"
+      data-theme="${escapeHtml(giscus.theme || "preferred_color_scheme")}"
+      data-lang="${escapeHtml(giscus.lang || "zh-CN")}"
+      data-loading="lazy"
+      crossorigin="anonymous"
+      async>
+    </script>
+  </section>`;
+}
+
 function renderHome(posts) {
   const home = readPage("home.md");
   const recent = posts
@@ -367,6 +402,7 @@ function renderPostsIndex(posts) {
 
 function renderPost(post) {
   const toc = renderToc(post.headings);
+  const comments = renderComments();
   return layout({
     title: post.title,
     description: post.summary,
@@ -379,6 +415,7 @@ function renderPost(post) {
           <p>${escapeHtml(post.summary)}</p>
         </header>
         <div class="article-body">${post.html}</div>
+        ${comments}
       </article>
       ${toc}
     </div>`

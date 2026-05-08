@@ -5,6 +5,23 @@
   "author": "Robin",
   "email": "",
   "github": "",
+  "comments": {
+    "provider": "giscus",
+    "enabled": false,
+    "giscus": {
+      "repo": "robin-ming/kernelspace.top",
+      "repoId": "R_kgDOSXaXvw",
+      "category": "Comments",
+      "categoryId": "",
+      "mapping": "pathname",
+      "strict": "0",
+      "reactionsEnabled": "1",
+      "emitMetadata": "0",
+      "inputPosition": "bottom",
+      "theme": "preferred_color_scheme",
+      "lang": "zh-CN"
+    }
+  },
   "nav": [
     { "label": "文章", "href": "/posts/" },
     { "label": "专题", "href": "/topics/" },
