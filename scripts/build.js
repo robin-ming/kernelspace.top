@@ -57,12 +57,28 @@ function escapeHtml(value = "") {
 }
 
 function slugify(value) {
-  return String(value)
+  const slug = String(value)
     .toLowerCase()
     .trim()
     .replace(/[`~!@#$%^&*()+=[\]{};:'",.<>/?\\|]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+  return slug || "section";
+}
+
+function stripInlineMarkdown(text) {
+  return String(text)
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .trim();
+}
+
+function uniqueSlug(value, seen) {
+  const base = slugify(value);
+  const count = seen.get(base) || 0;
+  seen.set(base, count + 1);
+  return count ? `${base}-${count + 1}` : base;
 }
 
 function inlineMarkdown(text) {
@@ -73,9 +89,11 @@ function inlineMarkdown(text) {
   return html;
 }
 
-function markdownToHtml(markdown) {
+function markdownToHtml(markdown, options = {}) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
+  const headings = [];
+  const headingIds = new Map();
   let paragraph = [];
   let list = [];
   let fence = null;
@@ -120,8 +138,14 @@ function markdownToHtml(markdown) {
       flushParagraph();
       flushList();
       const level = heading[1].length + 1;
+      const id = uniqueSlug(heading[2], headingIds);
       const text = inlineMarkdown(heading[2]);
-      blocks.push(`<h${level} id="${slugify(heading[2])}">${text}</h${level}>`);
+      headings.push({
+        id,
+        level,
+        text: stripInlineMarkdown(heading[2])
+      });
+      blocks.push(`<h${level} id="${id}">${text}</h${level}>`);
       continue;
     }
     const bullet = line.match(/^-\s+(.+)$/);
@@ -141,7 +165,8 @@ function markdownToHtml(markdown) {
 
   flushParagraph();
   flushList();
-  return blocks.join("\n");
+  const html = blocks.join("\n");
+  return options.collectHeadings ? { html, headings } : html;
 }
 
 function readPage(file) {
@@ -158,6 +183,7 @@ function readPosts() {
     .map((name) => {
       const source = fs.readFileSync(path.join(postsDir, name), "utf8");
       const { data, body } = parseFrontMatter(source);
+      const rendered = markdownToHtml(body, { collectHeadings: true });
       const slug = name.replace(/\.md$/, "");
       return {
         slug,
@@ -167,7 +193,8 @@ function readPosts() {
         summary: data.summary || "",
         tags: Array.isArray(data.tags) ? data.tags : [],
         body,
-        html: markdownToHtml(body)
+        html: rendered.html,
+        headings: rendered.headings
       };
     })
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -215,6 +242,21 @@ function writePage(route, html) {
 
 function tagList(tags) {
   return tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+}
+
+function renderToc(headings = []) {
+  if (!headings.length) return "";
+  const items = headings
+    .map(
+      (heading) => `<li class="toc-level-${heading.level}">
+        <a href="#${heading.id}">${escapeHtml(heading.text)}</a>
+      </li>`
+    )
+    .join("");
+  return `<aside class="article-toc" aria-label="文章目录">
+    <h2>Contents</h2>
+    <ol>${items}</ol>
+  </aside>`;
 }
 
 function renderHome(posts) {
@@ -290,18 +332,22 @@ function renderPostsIndex(posts) {
 }
 
 function renderPost(post) {
+  const toc = renderToc(post.headings);
   return layout({
     title: post.title,
     description: post.summary,
     active: post.url,
-    body: `<article class="article">
-      <header>
-        <div class="post-meta">${escapeHtml(post.date)} ${tagList(post.tags)}</div>
-        <h1>${escapeHtml(post.title)}</h1>
-        <p>${escapeHtml(post.summary)}</p>
-      </header>
-      <div class="article-body">${post.html}</div>
-    </article>`
+    body: `<div class="article-shell">
+      <article class="article">
+        <header>
+          <div class="post-meta">${escapeHtml(post.date)} ${tagList(post.tags)}</div>
+          <h1>${escapeHtml(post.title)}</h1>
+          <p>${escapeHtml(post.summary)}</p>
+        </header>
+        <div class="article-body">${post.html}</div>
+      </article>
+      ${toc}
+    </div>`
   });
 }
 
