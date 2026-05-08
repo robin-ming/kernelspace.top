@@ -10,6 +10,11 @@ const distDir = path.join(root, "dist");
 const config = JSON.parse(fs.readFileSync(path.join(root, "site.config.json"), "utf8"));
 
 const isWatch = process.argv.includes("--watch");
+const POSTS_PER_PAGE = 20;
+const CATEGORY_POSTS_PER_PAGE = 20;
+const FEED_LIMIT = 50;
+const SEARCH_CONTENT_LIMIT = 1200;
+const SEARCH_RESULT_LIMIT = 50;
 
 function clean() {
   fs.rmSync(distDir, { recursive: true, force: true });
@@ -60,6 +65,10 @@ function parseFrontMatter(source) {
   return { data, body: match[2].trim() };
 }
 
+function warn(message) {
+  console.warn(`Warning: ${message}`);
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -100,6 +109,31 @@ function plainTextFromMarkdown(text) {
     .replace(/[>|*_~#]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function excerptText(text, limit = 180) {
+  const plain = plainTextFromMarkdown(text);
+  return plain.length > limit ? `${plain.slice(0, limit).trim()}...` : plain;
+}
+
+function normalizePostData(data, body, slug, filename) {
+  const title = data.title || stripInlineMarkdown((body.match(/^#\s+(.+)$/m) || [])[1] || slug);
+  const date = data.date || "";
+  const summary = data.summary || excerptText(body, 120) || title;
+  const category = data.category || "Notes";
+  const tags = Array.isArray(data.tags) ? data.tags : [];
+  const problems = [];
+
+  if (!data.title) problems.push("missing title");
+  if (!data.date) problems.push("missing date");
+  if (data.date && !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) problems.push(`invalid date: ${data.date}`);
+  if (!data.summary) problems.push("missing summary");
+  if (!data.category) problems.push("missing category");
+  if (!Array.isArray(data.tags)) problems.push("missing or invalid tags");
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(slug)) problems.push("slug should use URL-safe characters");
+  if (problems.length) warn(`${filename}: ${problems.join(", ")}; using safe fallback values`);
+
+  return { title, date, summary, category, tags };
 }
 
 function uniqueSlug(value, seen) {
@@ -281,23 +315,27 @@ function readPage(file) {
 
 function readPosts() {
   if (!fs.existsSync(postsDir)) return [];
+  const seenSlugs = new Set();
   return fs
     .readdirSync(postsDir)
-    .filter((name) => name.endsWith(".md"))
+    .filter((name) => name.endsWith(".md") && !name.startsWith("."))
     .map((name) => {
       const source = fs.readFileSync(path.join(postsDir, name), "utf8");
       const { data, body } = parseFrontMatter(source);
       const rendered = markdownToHtml(body, { collectHeadings: true });
       const slug = name.replace(/\.md$/, "");
+      if (seenSlugs.has(slug)) throw new Error(`Duplicate post slug: ${slug}`);
+      seenSlugs.add(slug);
+      const normalized = normalizePostData(data, body, slug, name);
       return {
         slug,
         url: `/posts/${slug}/`,
-        title: data.title || slug,
-        date: data.date || "",
-        summary: data.summary || "",
-        category: data.category || "Notes",
-        categorySlug: categorySlug(data.category || "Notes"),
-        tags: Array.isArray(data.tags) ? data.tags : [],
+        title: normalized.title,
+        date: normalized.date,
+        summary: normalized.summary,
+        category: normalized.category,
+        categorySlug: categorySlug(normalized.category),
+        tags: normalized.tags,
         body,
         html: rendered.html,
         headings: rendered.headings
@@ -363,6 +401,31 @@ function writePage(route, html) {
   fs.writeFileSync(path.join(targetDir, "index.html"), html);
 }
 
+function pageRoute(base, page) {
+  return page === 1 ? base : path.posix.join(base, "page", String(page), "/");
+}
+
+function paginate(items, perPage) {
+  const pages = [];
+  for (let i = 0; i < items.length; i += perPage) {
+    pages.push({
+      page: pages.length + 1,
+      totalPages: Math.ceil(items.length / perPage),
+      items: items.slice(i, i + perPage)
+    });
+  }
+  return pages.length ? pages : [{ page: 1, totalPages: 1, items: [] }];
+}
+
+function renderPagination(base, page, totalPages) {
+  if (totalPages <= 1) return "";
+  const links = [];
+  if (page > 1) links.push(`<a href="${pageRoute(base, page - 1)}">上一页</a>`);
+  links.push(`<span>${page} / ${totalPages}</span>`);
+  if (page < totalPages) links.push(`<a href="${pageRoute(base, page + 1)}">下一页</a>`);
+  return `<nav class="pagination" aria-label="分页">${links.join("")}</nav>`;
+}
+
 function tagList(tags) {
   return tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
 }
@@ -386,6 +449,16 @@ function groupByArchiveMonth(posts) {
   const groups = new Map();
   for (const post of posts) {
     const key = post.date.slice(0, 7) || "undated";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(post);
+  }
+  return [...groups.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+}
+
+function groupByArchiveYear(posts) {
+  const groups = new Map();
+  for (const post of posts) {
+    const key = post.date.slice(0, 4) || "undated";
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(post);
   }
@@ -531,12 +604,13 @@ crash&gt; dis -l schedule</code></pre>
   });
 }
 
-function renderPostsIndex(posts) {
+function renderPostsIndex(posts, page = 1, totalPages = 1) {
   const items = posts.map(postRow).join("");
   return layout({
-    title: "文章",
+    title: page === 1 ? "文章" : `文章 第 ${page} 页`,
     active: "/posts/",
-    body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/archive/">归档</a></div></section><section class="post-list">${items}</section>`
+    canonical: pageRoute("/posts/", page),
+    body: `<section class="page-title"><h1>文章</h1><p>调试记录、补丁复盘和底层系统笔记。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/archive/">归档</a></div></section><section class="post-list">${items}</section>${renderPagination("/posts/", page, totalPages)}`
   });
 }
 
@@ -614,16 +688,16 @@ function renderCategoriesIndex(categories) {
   });
 }
 
-function renderCategoryPage(category) {
+function renderCategoryPage(category, posts = category.posts, page = 1, totalPages = 1) {
   return layout({
-    title: category.name,
+    title: page === 1 ? category.name : `${category.name} 第 ${page} 页`,
     active: "/archive/",
-    canonical: `/categories/${category.slug}/`,
-    body: `<section class="page-title"><h1>${escapeHtml(category.name)}</h1><p>${category.posts.length} 篇文章</p><p><a href="/categories/">查看全部分类</a></p></section><section class="post-list">${category.posts.map(postRow).join("")}</section>`
+    canonical: pageRoute(`/categories/${category.slug}/`, page),
+    body: `<section class="page-title"><h1>${escapeHtml(category.name)}</h1><p>${category.posts.length} 篇文章</p><p><a href="/categories/">查看全部分类</a></p></section><section class="post-list">${posts.map(postRow).join("")}</section>${renderPagination(`/categories/${category.slug}/`, page, totalPages)}`
   });
 }
 
-function renderArchive(posts) {
+function renderArchiveYear(year, posts) {
   const months = groupByArchiveMonth(posts)
     .map(
       ([month, monthPosts]) => `<section class="archive-month">
@@ -641,9 +715,26 @@ function renderArchive(posts) {
     )
     .join("");
   return layout({
+    title: year ? `归档 ${year}` : "归档",
+    active: "/archive/",
+    canonical: year ? `/archive/${year}/` : "/archive/",
+    body: `<section class="page-title"><h1>${year ? escapeHtml(year) : "归档"}</h1><p>按时间回看文章和调试记录。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/posts/">全部文章</a>${year ? '<a class="button light" href="/archive/">全部年份</a>' : ""}</div></section><section class="archive">${months}</section>`
+  });
+}
+
+function renderArchive(posts) {
+  const years = groupByArchiveYear(posts)
+    .map(
+      ([year, yearPosts]) => `<a class="archive-year-card" href="/archive/${year}/">
+        <strong>${escapeHtml(year)}</strong>
+        <span>${yearPosts.length} 篇文章</span>
+      </a>`
+    )
+    .join("");
+  return layout({
     title: "归档",
     active: "/archive/",
-    body: `<section class="page-title"><h1>归档</h1><p>按时间回看文章和调试记录。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/posts/">全部文章</a></div></section><section class="archive">${months}</section>`
+    body: `<section class="page-title"><h1>归档</h1><p>按年份回看文章和调试记录。</p><div class="page-actions"><a class="button light" href="/categories/">分类</a><a class="button light" href="/posts/">全部文章</a></div></section><section class="archive-years">${years}</section>`
   });
 }
 
@@ -670,6 +761,7 @@ function renderSearchPage() {
       const results = document.querySelector("#search-results");
       const hint = document.querySelector("#search-hint");
       let index = [];
+      let searchTimer = 0;
 
       const escapeHtml = (value = "") => String(value)
         .replaceAll("&", "&amp;")
@@ -712,7 +804,7 @@ function renderSearchPage() {
           .map((post) => ({ post, score: scorePost(post, terms) }))
           .filter((item) => item.score > 0)
           .sort((a, b) => b.score - a.score || String(b.post.date).localeCompare(String(a.post.date)))
-          .slice(0, 24);
+          .slice(0, ${SEARCH_RESULT_LIMIT});
 
         hint.textContent = matches.length ? \`找到 \${matches.length} 篇相关文章\` : "没有匹配的文章，换个关键词试试。";
         results.innerHTML = matches.map(({ post }) => \`
@@ -735,7 +827,10 @@ function renderSearchPage() {
           hint.textContent = "搜索索引加载失败。";
         });
 
-      input.addEventListener("input", () => render(input.value));
+      input.addEventListener("input", () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => render(input.value), 120);
+      });
       input.focus({ preventScroll: true });
     </script>`
   });
@@ -750,8 +845,8 @@ function renderSearchIndex(posts) {
       tags: post.tags,
       date: post.date,
       url: post.url,
-      excerpt: plainTextFromMarkdown(post.body).slice(0, 180),
-      content: plainTextFromMarkdown(post.body)
+      excerpt: excerptText(post.body, 180),
+      content: excerptText(post.body, SEARCH_CONTENT_LIMIT)
     })),
     null,
     2
@@ -760,6 +855,7 @@ function renderSearchIndex(posts) {
 
 function renderFeed(posts) {
   const items = posts
+    .slice(0, FEED_LIMIT)
     .map(
       (post) => `<item>
   <title>${escapeHtml(post.title)}</title>
@@ -782,15 +878,21 @@ ${items}
 }
 
 function renderSitemap(posts, categories = []) {
+  const postPages = paginate(posts, POSTS_PER_PAGE).map((page) => pageRoute("/posts/", page.page));
+  const categoryPages = categories.flatMap((category) =>
+    paginate(category.posts, CATEGORY_POSTS_PER_PAGE).map((page) => pageRoute(`/categories/${category.slug}/`, page.page))
+  );
+  const archivePages = groupByArchiveYear(posts).map(([year]) => `/archive/${year}/`);
   const routes = [
     "/",
-    "/posts/",
     "/search/",
     "/topics/",
     "/archive/",
     "/categories/",
     "/about/",
-    ...categories.map((category) => `/categories/${category.slug}/`),
+    ...postPages,
+    ...categoryPages,
+    ...archivePages,
     ...posts.map((post) => post.url)
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -807,12 +909,21 @@ function build() {
   const posts = readPosts();
   const categories = groupByCategory(posts);
   writePage("", renderHome(posts));
-  writePage("posts", renderPostsIndex(posts));
+  for (const page of paginate(posts, POSTS_PER_PAGE)) {
+    writePage(pageRoute("posts", page.page), renderPostsIndex(page.items, page.page, page.totalPages));
+  }
   writePage("search", renderSearchPage());
   writePage("topics", renderTopicsPage(categories));
   writePage("archive", renderArchive(posts));
+  for (const [year, yearPosts] of groupByArchiveYear(posts)) {
+    writePage(path.join("archive", year), renderArchiveYear(year, yearPosts));
+  }
   writePage("categories", renderCategoriesIndex(categories));
-  for (const category of categories) writePage(path.join("categories", category.slug), renderCategoryPage(category));
+  for (const category of categories) {
+    for (const page of paginate(category.posts, CATEGORY_POSTS_PER_PAGE)) {
+      writePage(pageRoute(path.posix.join("categories", category.slug), page.page), renderCategoryPage(category, page.items, page.page, page.totalPages));
+    }
+  }
   writePage("about", renderSimplePage("about.md", "about", "/about/"));
   for (const post of posts) writePage(path.join("posts", post.slug), renderPost(post));
   writePage("404", layout({

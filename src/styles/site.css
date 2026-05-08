@@ -290,6 +290,26 @@ li code {
   padding: 28px 0 56px;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 64px;
+  color: var(--muted-dark);
+}
+
+.pagination a,
+.pagination span {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.42);
+  text-decoration: none;
+}
+
 .search-panel {
   display: grid;
   gap: 18px;
@@ -458,6 +478,31 @@ li code {
   display: grid;
   gap: 34px;
   padding: 30px 0 60px;
+}
+
+.archive-years {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 30px 0 60px;
+}
+
+.archive-year-card {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  text-decoration: none;
+}
+
+.archive-year-card strong {
+  font-size: 1.5rem;
+}
+
+.archive-year-card span {
+  color: var(--muted-dark);
 }
 
 .archive-month {
