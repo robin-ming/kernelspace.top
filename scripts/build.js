@@ -232,20 +232,33 @@ function renderHome(posts) {
   return layout({
     title: config.title,
     active: "/",
-    body: `<section class="hero">
-      <div>
+    body: `<section class="hero hero-immersive">
+      <img class="hero-image" src="/assets/kernelspace-hero.png" alt="" aria-hidden="true">
+      <div class="hero-copy">
         <p class="eyebrow">Linux kernel engineering notes</p>
         <h1>${escapeHtml(home.title)}</h1>
         <p class="subtitle">${escapeHtml(home.subtitle)}</p>
         <div class="intro">${home.html}</div>
+        <div class="hero-actions">
+          <a class="button primary" href="/posts/">阅读文章</a>
+          <a class="button" href="/about/">关于本站</a>
+        </div>
       </div>
       <aside class="terminal-panel" aria-label="站点主题">
         <div class="terminal-bar"><span></span><span></span><span></span></div>
-        <pre><code>$ addr2line -e vmlinux
+        <pre><code>panic: unable to handle kernel paging request
+RIP: __handle_mm_fault+0x2a1/0x910
+
 $ crash vmcore vmlinux
-$ git format-patch -1
-$ make ARCH=loongarch olddefconfig</code></pre>
+crash&gt; bt
+crash&gt; kmem -i
+crash&gt; dis -l schedule</code></pre>
       </aside>
+    </section>
+    <section class="signal-strip" aria-label="站点关注方向">
+      <div><strong>Kernel Debugging</strong><span>crash, ftrace, perf, lockdep</span></div>
+      <div><strong>Driver Bring-up</strong><span>probe, irq, dma, clocks</span></div>
+      <div><strong>Patch Notes</strong><span>root cause, tradeoffs, review</span></div>
     </section>
     <section class="section-head">
       <h2>最近文章</h2>
@@ -343,6 +356,10 @@ function build() {
   writePage("topics", renderSimplePage("topics.md", "topics", "/topics/"));
   writePage("about", renderSimplePage("about.md", "about", "/about/"));
   for (const post of posts) writePage(path.join("posts", post.slug), renderPost(post));
+  writePage("404", layout({
+    title: "404",
+    body: `<section class="page-title"><h1>404</h1><p>这个页面不存在，可能文章路径已经调整。</p><p><a class="button primary" href="/">回到首页</a></p></section>`
+  }));
   fs.writeFileSync(path.join(distDir, "feed.xml"), renderFeed(posts));
   fs.writeFileSync(path.join(distDir, "sitemap.xml"), renderSitemap(posts));
   console.log(`Built ${posts.length} post(s) into dist/`);
