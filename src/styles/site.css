@@ -264,13 +264,19 @@ li code {
 }
 
 .page-title {
-  padding: 52px 0 26px;
+  padding: 30px 0 18px;
   border-bottom: 1px solid var(--line);
 }
 
 .page-title h1 {
-  font-size: clamp(2rem, 4.2vw, 3.4rem);
-  line-height: 1.14;
+  font-size: clamp(1.75rem, 3.2vw, 2.7rem);
+  line-height: 1.1;
+}
+
+.page-title p {
+  margin: 10px 0 0;
+  font-size: 0.98rem;
+  line-height: 1.55;
 }
 
 .article h1 {
