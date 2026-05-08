@@ -1,6 +1,6 @@
 ---
 title: 人生感悟：把自己和边界看清楚
-date: 2026-05-08
+date: 2026-03-23
 summary: 很多关系里的痛苦，不是因为谁坏，而是因为边界不清，期待过高，或者把别人的责任拿到了自己身上。
 category: 人生感悟
 tags: [boundary, relationship, life]

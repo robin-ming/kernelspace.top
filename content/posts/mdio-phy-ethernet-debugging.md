@@ -1,6 +1,6 @@
 ---
 title: MDIO 和 PHY 调试：网口不通先看链路层
-date: 2026-04-30
+date: 2026-01-30
 summary: 以太网不通不一定是网络栈问题。MDIO、PHY 地址、reset、时钟、RGMII delay 和 MAC 配置任何一环错了，链路都可能起不来。
 category: Driver Development
 tags: [ethernet, mdio, phy]

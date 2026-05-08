@@ -1,6 +1,6 @@
 ---
 title: 人生感悟：长期主义不是拖延
-date: 2026-05-08
+date: 2026-03-30
 summary: 真正的长期主义不是一句“以后会更好”的安慰，而是今天就开始减少未来的代价。
 category: 人生感悟
 tags: [long-term, discipline, life]

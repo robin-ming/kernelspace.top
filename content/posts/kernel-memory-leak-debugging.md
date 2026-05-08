@@ -1,6 +1,6 @@
 ---
 title: 内核内存泄漏排查：从 slab 增长到对象归属
-date: 2026-05-02
+date: 2026-04-17
 summary: 内核内存泄漏排查不能只看 free 下降，要把 slab、page owner、kmemleak、引用计数和对象生命周期串成一条证据链。
 category: Kernel Debugging
 tags: [memory, slab, kmemleak]

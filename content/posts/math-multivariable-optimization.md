@@ -1,6 +1,6 @@
 ---
 title: 高等数学：多元函数、梯度与极值
-date: 2026-05-08
+date: 2026-02-20
 summary: 多元函数比一元函数更接近真实问题，梯度给出最陡上升方向，Hessian 则告诉你局部到底是山峰、山谷还是鞍点。
 category: 数学
 tags: [multivariable, gradient, hessian]

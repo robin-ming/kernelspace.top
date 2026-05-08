@@ -1,6 +1,6 @@
 ---
 title: 高等数学：定积分与累积量
-date: 2026-05-08
+date: 2026-02-28
 summary: 定积分不只是面积，它更像把无数微小增量加在一起之后得到的总量。
 category: 数学
 tags: [calculus, integral, accumulation]

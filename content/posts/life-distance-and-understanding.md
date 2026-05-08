@@ -1,6 +1,6 @@
 ---
 title: 人生感悟：距离一旦拉开，理解才会真正发生
-date: 2026-05-08
+date: 2026-04-05
 summary: 很多东西离得太近时看不清，离得太远时又失真。人真正成熟，往往是在距离里学会理解。
 category: 人生感悟
 tags: [distance, understanding, life]

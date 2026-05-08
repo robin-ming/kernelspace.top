@@ -1,6 +1,6 @@
 ---
 title: 第一篇：为什么要建这个站点
-date: 2026-05-08
+date: 2026-01-19
 summary: kernelspace.top 会作为一个长期维护的内核工程技术笔记站点，用来沉淀调试过程、补丁记录和问题复盘。
 category: Notes
 tags: [meta, kernel, notes]

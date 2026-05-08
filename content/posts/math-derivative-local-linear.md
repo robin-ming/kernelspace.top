@@ -1,6 +1,6 @@
 ---
 title: 高等数学：导数的本质是局部线性
-date: 2026-05-08
+date: 2026-03-06
 summary: 导数不是单纯的变化率，它更深的意义，是把一个函数在一点附近压缩成最合适的线性近似。
 category: 数学
 tags: [calculus, derivative, linear]

@@ -1,6 +1,6 @@
 ---
 title: 数学感悟：结构比计算更重要
-date: 2026-05-08
+date: 2026-02-10
 summary: 计算能力很重要，但真正决定一个人能走多远的，通常不是手算速度，而是看结构的能力。
 category: 数学
 tags: [math, structure, abstraction]

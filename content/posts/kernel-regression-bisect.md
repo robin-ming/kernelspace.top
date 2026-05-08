@@ -1,6 +1,6 @@
 ---
 title: 内核回归定位：让 bisect 成为工程流程
-date: 2026-04-29
+date: 2026-04-12
 summary: 回归定位不是机械运行 git bisect，而是定义好现象、构建可重复测试、控制变量，并在坏提交出现后验证根因。
 category: Patch Notes
 tags: [regression, bisect, git]

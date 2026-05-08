@@ -1,6 +1,6 @@
 ---
 title: 高等数学：微分方程把规律写成演化
-date: 2026-05-08
+date: 2026-03-03
 summary: 微分方程的本质，是用一个关于变化率的方程，去描述系统如何随时间演化。
 category: 数学
 tags: [calculus, differential-equation, dynamics]

@@ -1,6 +1,6 @@
 ---
 title: 数学感悟：抽象不是远离世界，而是抓住不变量
-date: 2026-05-08
+date: 2026-03-09
 summary: 数学里最深的能力，不是算得快，而是在变化里看见不变，在具体里提炼出结构。
 category: 数学
 tags: [math, abstraction, invariant]

@@ -1,6 +1,6 @@
 ---
 title: 高等数学：向量场、散度与旋度
-date: 2026-05-08
+date: 2026-02-03
 summary: 当函数从一个数变成一个向量，分析对象就从标量场升级成了向量场；散度和旋度描述的，是流的聚散与转动。
 category: 数学
 tags: [vector-calculus, divergence, curl]

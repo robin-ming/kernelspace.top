@@ -1,6 +1,6 @@
 ---
 title: 高等数学：级数收敛与发散的边界
-date: 2026-05-08
+date: 2026-02-13
 summary: 级数研究的是无穷多个项加起来会发生什么；收敛与发散的差别，往往就是数学分析里最敏感的边界之一。
 category: 数学
 tags: [calculus, series, convergence]

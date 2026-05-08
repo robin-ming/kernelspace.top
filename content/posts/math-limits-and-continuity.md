@@ -1,6 +1,6 @@
 ---
 title: 高等数学：极限、连续与局部线性化
-date: 2026-05-08
+date: 2026-02-24
 summary: 极限不是为了把式子算完，而是为了把函数在某一点附近的行为说清楚；连续只是其中最温和的一种稳定性。
 category: 数学
 tags: [calculus, limit, continuity]

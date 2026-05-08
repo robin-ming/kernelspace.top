@@ -1,6 +1,6 @@
 ---
 title: RCU 和锁问题排查：先搞清楚谁保护了什么
-date: 2026-05-03
+date: 2026-01-23
 summary: RCU、spinlock、mutex 和 refcount 解决的是不同生命周期问题。排查并发 bug 时，先弄清楚对象、访问路径和保护关系，比先加锁更重要。
 category: Kernel Debugging
 tags: [rcu, locking, concurrency]

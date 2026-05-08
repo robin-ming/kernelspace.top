@@ -1,6 +1,6 @@
 ---
 title: 人生感悟：别把情绪当结论
-date: 2026-05-08
+date: 2026-04-02
 summary: 人在低落、愤怒、疲惫时做出的判断，常常不是事实结论，只是当时状态的投影。
 category: 人生感悟
 tags: [emotion, judgment, life]

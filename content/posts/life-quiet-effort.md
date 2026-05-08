@@ -1,6 +1,6 @@
 ---
 title: 人生感悟：真正有分量的努力，往往都很安静
-date: 2026-05-08
+date: 2026-03-26
 summary: 有些努力不需要被看见。真正把人带向更高处的，通常不是一时很响的动作，而是长时间不动声色的积累。
 category: 人生感悟
 tags: [effort, discipline, life]

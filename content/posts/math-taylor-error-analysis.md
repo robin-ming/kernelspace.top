@@ -1,6 +1,6 @@
 ---
 title: 高等数学：泰勒公式与误差控制
-date: 2026-05-08
+date: 2026-02-06
 summary: 泰勒展开不是把函数写得更长，而是把函数在局部拆成主项和误差项；真正重要的，往往是误差怎么被控制住。
 category: 数学
 tags: [calculus, taylor, error]

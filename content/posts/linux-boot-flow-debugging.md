@@ -1,6 +1,6 @@
 ---
 title: Linux 启动流程调试：从 bootloader 到第一个 userspace
-date: 2026-05-01
+date: 2026-03-16
 summary: 启动失败要按阶段定位：镜像加载、解压、early console、设备树、initcall、rootfs 和 init，每一段都有不同的证据来源。
 category: Boot Flow
 tags: [boot, initcall, rootfs]

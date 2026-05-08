@@ -1,6 +1,6 @@
 ---
 title: 本站 Markdown 语法验证文章
-date: 2026-04-28
+date: 2026-03-13
 summary: 用一篇文章覆盖本站当前支持的 Markdown 语法，包括引用、图片、分隔线、表格、Mermaid、MathJax、列表、链接和代码块。
 category: Notes
 tags: [markdown, syntax, site]
