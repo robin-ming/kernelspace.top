@@ -173,7 +173,7 @@ function readPosts() {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
-function layout({ title, description, body, active = "" }) {
+function layout({ title, description, body, active = "", bodyClass = "page" }) {
   const pageTitle = title === config.title ? config.title : `${title} - ${config.title}`;
   const nav = config.nav
     .map((item) => `<a class="${active === item.href ? "active" : ""}" href="${item.href}">${item.label}</a>`)
@@ -189,7 +189,7 @@ function layout({ title, description, body, active = "" }) {
   <link rel="alternate" type="application/rss+xml" title="${escapeHtml(config.title)}" href="/feed.xml">
   <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body>
+<body class="${escapeHtml(bodyClass)}">
   <header class="site-header">
     <a class="brand" href="/">
       <span class="prompt">root@kernelspace</span>
@@ -232,6 +232,7 @@ function renderHome(posts) {
   return layout({
     title: config.title,
     active: "/",
+    bodyClass: "home",
     body: `<section class="hero hero-immersive">
       <img class="hero-image" src="/assets/kernelspace-hero.png" alt="" aria-hidden="true">
       <div class="hero-copy">

@@ -337,11 +337,17 @@ html {
   background: var(--bg);
 }
 
-body {
+body.home {
   color: var(--ink);
   background:
     radial-gradient(circle at 80% 12%, rgb(105 211 154 / 0.12), transparent 28rem),
     linear-gradient(180deg, #080b0a 0%, #0d1210 58%, var(--paper) 58%, var(--paper) 100%);
+  text-rendering: geometricPrecision;
+}
+
+body.page {
+  color: var(--ink-dark);
+  background: var(--paper);
   text-rendering: geometricPrecision;
 }
 
@@ -353,6 +359,14 @@ body {
   border-bottom: 1px solid var(--line);
   background: rgb(8 11 10 / 0.76);
   backdrop-filter: blur(18px);
+}
+
+.page .site-header {
+  color: var(--ink);
+}
+
+.page main {
+  min-height: calc(100vh - 156px);
 }
 
 nav a {
@@ -593,7 +607,7 @@ li code {
 }
 
 @media (max-width: 860px) {
-  body {
+  body.home {
     background:
       radial-gradient(circle at 78% 4%, rgb(105 211 154 / 0.1), transparent 20rem),
       linear-gradient(180deg, #080b0a 0%, #0d1210 64%, var(--paper) 64%, var(--paper) 100%);
