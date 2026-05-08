@@ -369,53 +369,24 @@ function groupByArchiveMonth(posts) {
   return [...groups.entries()].sort((a, b) => b[0].localeCompare(a[0]));
 }
 
-const topicPlan = [
-  {
-    name: "Kernel Debugging",
-    summary: "panic、crash、ftrace、lockdep 和现场证据。",
-  },
-  {
-    name: "Device Tree",
-    summary: "dts、binding、clock、regulator 和设备描述。",
-  },
-  {
-    name: "Driver Development",
-    summary: "probe、irq、dma、clock 和资源依赖。",
-  },
-  {
-    name: "Kdump / Crash",
-    summary: "vmcore、crash、dump 流程和分析方法。",
-  },
-  {
-    name: "Boot Flow",
-    summary: "从 bootloader 到 init 的启动路径。",
-  },
-  {
-    name: "Patch Notes",
-    summary: "补丁复盘、根因闭环和提交说明。",
-  },
-];
+function sortCategoriesForTopics(categories) {
+  return [...categories].sort((a, b) => {
+    const aDate = a.posts[0]?.date || "";
+    const bDate = b.posts[0]?.date || "";
+    const dateOrder = bDate.localeCompare(aDate);
+    if (dateOrder) return dateOrder;
+    return a.name.localeCompare(b.name);
+  });
+}
 
-function renderTopicCard(plan, category) {
-  if (!category) {
-    return `<div class="taxonomy-card topic-card topic-card-muted">
-      <span>待整理</span>
-      <strong>${escapeHtml(plan.name)}</strong>
-      <small>${escapeHtml(plan.summary)}</small>
-      <div class="topic-latest">
-        <span>状态</span>
-        <em>文章还在补充中</em>
-      </div>
-    </div>`;
-  }
-
+function renderTopicCard(category) {
   const latest = category.posts[0];
   return `<a class="taxonomy-card topic-card" href="/categories/${category.slug}/">
     <span>${category.posts.length} 篇文章</span>
-    <strong>${escapeHtml(plan.name)}</strong>
-    <small>${escapeHtml(plan.summary)}</small>
+    <strong>${escapeHtml(category.name)}</strong>
+    <small>${escapeHtml(latest?.summary || "暂无摘要")}</small>
     <div class="topic-latest">
-      <span>最新文章</span>
+      <span>最新更新</span>
       <em>${escapeHtml(latest?.title || "未命名")}</em>
     </div>
   </a>`;
@@ -548,9 +519,8 @@ function renderPostsIndex(posts) {
 
 function renderTopicsPage(categories) {
   const page = readPage("topics.md");
-  const categoryByName = new Map(categories.map((category) => [category.name, category]));
-  const cards = topicPlan
-    .map((topic) => renderTopicCard(topic, categoryByName.get(topic.name)))
+  const cards = sortCategoriesForTopics(categories)
+    .map((category) => renderTopicCard(category))
     .join("");
 
   return layout({
