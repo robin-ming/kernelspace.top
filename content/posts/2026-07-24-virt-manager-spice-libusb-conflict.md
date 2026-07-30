@@ -6,7 +6,8 @@ category: linux-virtualization
 tags: [codex, "kvm"]
 source_project: "kvm"
 source_path: "/home/robin/Storage/Project/kvm/virt-manager-spice故障分析与修复记录.md"
-synced_at: "2026-07-24T17:36:47+08:00"
+synced_at: "2026-07-30T10:15:00+08:00"
+lastmod: 2026-07-30
 ---
 
 # virt-manager SPICE 控制台故障分析与修复记录
@@ -165,3 +166,101 @@ libusb-1.0.so.0 => /lib/x86_64-linux-gnu/libusb-1.0.so.0
 - 使用独立的 `virt-viewer --debug` 获取比 virt-manager 界面更具体的底层错误。
 - 软件升级或重新安装 MVS 后，应检查安装程序是否再次向登录配置追加
   `LD_LIBRARY_PATH`。
+
+## 8. 2026-07-30 复发分析与补充修复
+
+### 8.1 复发现象
+
+用户重启 Windows 虚拟机后，virt-manager 仍然显示相同的图形控制台错误。再次检查发现：
+
+```text
+LD_LIBRARY_PATH=/opt/MVS/lib/64:/opt/MVS/lib/32:/opt/MVS/lib/64:/opt/MVS/lib/32:
+```
+
+virt-viewer 仍会加载 MVS 自带的旧版 libusb，并报告：
+
+```text
+libusbredirhost.so.1: undefined symbol: libusb_set_option
+```
+
+### 8.2 为什么首次修改后仍会复发
+
+首次修复已经正确修改磁盘上的 `/etc/profile`、`~/.profile` 和 `~/.bashrc`，但宿主机实际
+没有重启或注销 KDE 会话。宿主机启动时间仍为：
+
+```text
+2026-07-24 10:09:50
+```
+
+重启 Windows 虚拟机只会重启来宾系统，不会重建宿主机的 KDE、D-Bus 或 user systemd
+环境。Plasma 进程仍持有登录时继承的旧 `LD_LIBRARY_PATH`，从桌面菜单启动的新程序也会
+继续继承该值。
+
+这说明，仅删除配置文件中的赋值可以防止下次全新登录再次注入变量，但无法反向修改已经
+运行的桌面进程环境。
+
+### 8.3 补充修复
+
+为同时覆盖当前会话和后续登录，增加了以下保护。
+
+在 `~/.profile` 和 `~/.bashrc` 中主动清除可能从父进程继承的旧值：
+
+```bash
+unset LD_LIBRARY_PATH
+```
+
+清理当前 user systemd 和 D-Bus 激活环境中的遗留值，使后续由这些服务启动的进程不再
+继承 MVS 私有库路径。
+
+同时创建用户级 virt-manager 安全启动器：
+
+```text
+/home/robin/.local/bin/virt-manager
+```
+
+内容如下：
+
+```sh
+#!/bin/sh
+unset LD_LIBRARY_PATH
+exec /usr/bin/virt-manager "$@"
+```
+
+由于 `~/.local/bin` 位于桌面会话的 `PATH` 前部，系统菜单中的 `Exec=virt-manager`
+会优先使用该启动器。即使未来某个第三方程序再次污染桌面环境，virt-manager 也会在启动
+前清除冲突路径。
+
+### 8.4 补充验证
+
+- 在故意注入 MVS `LD_LIBRARY_PATH` 的环境中运行安全启动器，virt-manager 4.1.0
+  能正常启动。
+- 使用清洁环境连接 `MicrosoftWindows11` 的 SPICE 控制台，未再发生动态库符号错误。
+- 实际启动后的 virt-manager 进程环境中没有 `LD_LIBRARY_PATH`。
+- Windows 虚拟机始终处于运行状态，未修改其磁盘和硬件配置。
+
+### 8.5 对海康 MVS 的影响
+
+该修复不会影响通过桌面图标或以下脚本启动 MVS：
+
+```text
+/opt/MVS/bin/MVS.sh
+```
+
+MVS 自带脚本会在自己的进程范围内设置：
+
+```bash
+export LD_LIBRARY_PATH=${ROOT_PATH}:/opt/MVS/lib/64
+```
+
+因此 MVS 继续使用厂商私有库，而 virt-manager 和其他系统程序使用 Ubuntu 系统库。
+如果自行开发的海康 SDK 程序直接执行二进制文件，则应使用独立启动脚本，仅为该程序设置
+MVS 的 `LD_LIBRARY_PATH`，不应恢复全局导出。
+
+### 8.6 新增备份
+
+补充修复前的用户配置备份为：
+
+```text
+/home/robin/.profile.codex-backup-20260730
+/home/robin/.bashrc.codex-backup-20260730
+```
